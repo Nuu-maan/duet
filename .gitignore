@@ -50,3 +50,10 @@ app.*.map.json
 # Your own Firebase and code-push config: never commit these
 /android/app/google-services.json
 /shorebird.yaml
+
+# Notification server: local files and keys
+/worker/node_modules/
+/worker/.wrangler/
+/worker/.dev.vars
+*service-account*.json
+*firebase-adminsdk*.json
