@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/services.dart';
@@ -26,9 +27,46 @@ int shownStreak(Object? streak, String today) {
   return lastDay == today || lastDay == previousDay(today) ? count : 0;
 }
 
+/// The home screen shows nothing until two days in a row are done.
+int displayStreak(Object? streak, String today) {
+  final run = shownStreak(streak, today);
+  return run >= 2 ? run : 0;
+}
+
+int bestStreak(Object? streak) =>
+    streak is Map && streak['best'] is int ? streak['best'] as int : 0;
+
+Set<String> streakDays(Object? streak) {
+  final days = streak is Map ? streak['days'] : null;
+  if (days is! Map) return const {};
+  return {
+    for (final key in days.keys)
+      if (key is String) key,
+  };
+}
+
+/// The days of the run that is still alive, newest first.
+Set<String> currentRun(Object? streak, String today) {
+  final length = shownStreak(streak, today);
+  if (length == 0) return const {};
+  var day = (streak as Map)['lastDay'] as String;
+  final run = <String>{};
+  for (var i = 0; i < length; i++) {
+    run.add(day);
+    day = previousDay(day);
+  }
+  return run;
+}
+
 Map<String, Object>? nextStreak(Object? streak, String today) {
   if (streak is Map && streak['lastDay'] == today) return null;
-  return {'count': shownStreak(streak, today) + 1, 'lastDay': today};
+  final count = shownStreak(streak, today) + 1;
+  return {
+    'count': count,
+    'lastDay': today,
+    'best': max(bestStreak(streak), count),
+    'days': {for (final day in streakDays(streak)) day: true, today: true},
+  };
 }
 
 enum QuestionType { text, who, pick }
