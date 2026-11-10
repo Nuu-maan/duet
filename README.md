@@ -2,6 +2,14 @@
 
 # Duet
 
+<p align="center">
+  <a href="https://github.com/Nuu-maan/duet/actions/workflows/ci.yml"><img src="https://github.com/Nuu-maan/duet/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-16587B" alt="MIT licence"></a>
+  <img src="https://img.shields.io/badge/platform-Android%207%2B-16587B" alt="Android 7 and newer">
+  <img src="https://img.shields.io/badge/built%20with-Flutter-16587B" alt="Built with Flutter">
+  <img src="https://img.shields.io/badge/cost-free-E07A5F" alt="Free">
+</p>
+
 A small, private Android app for two people: a couple, best friends, or anyone long-distance.
 You answer three questions a day, keep a streak going, play turn-based games and share a couple of lists.
 
@@ -131,6 +139,9 @@ flutter test
 flutter run --release   # performance is only meaningful in release mode
 ```
 
+To try things without touching your real data, build with `--dart-define=DUET_ROOT=demo`. The app then reads and
+writes under `/demo` instead of `/pair`; add a matching `demo` block to your database rules first.
+
 The project builds without `google-services.json`; the app then shows a "Firebase is not set up" screen. That
 is enough for working on UI and game rules, and it is what CI does.
 
@@ -156,7 +167,8 @@ More detail is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 ## Contributing
 
 Pull requests are welcome: new games, more questions, translations, bug fixes. Read
-[CONTRIBUTING.md](CONTRIBUTING.md) first; it is short.
+[CONTRIBUTING.md](CONTRIBUTING.md) first; it is short. Please also read the [code of conduct](CODE_OF_CONDUCT.md), and report
+security problems privately as described in [SECURITY.md](SECURITY.md).
 
 Good first contributions:
 
