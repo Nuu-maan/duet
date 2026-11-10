@@ -20,6 +20,25 @@ beyond Google sign-in.
 It is an open-source alternative to paid couple apps such as Lovora. Duet is an independent project and is not
 affiliated with any of them.
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/welcome.png" width="200" alt="Welcome screen">
+  <img src="docs/screenshots/home.png" width="200" alt="Home screen">
+  <img src="docs/screenshots/daily.png" width="200" alt="Daily challenge screen">
+  <img src="docs/screenshots/inbox.png" width="200" alt="Inbox screen">
+</p>
+<p align="center">
+  <img src="docs/screenshots/thread.png" width="200" alt="Question thread screen">
+  <img src="docs/screenshots/games.png" width="200" alt="Games screen">
+  <img src="docs/screenshots/game.png" width="200" alt="Reversi screen">
+  <img src="docs/screenshots/streak.png" width="200" alt="Streak calendar screen">
+</p>
+
+<p align="center"><sub>Welcome · Home · Daily challenge · Inbox<br>Question thread · Games · Reversi · Streak calendar</sub></p>
+
+The people and answers shown are made up.
+
 ## Features
 
 - **Daily challenge.** Three questions every day, the same on both phones: one to answer in your own words, one
