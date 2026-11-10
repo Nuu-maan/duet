@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/icon.png" width="112" alt="Duet icon: two round friends"></p>
+
 # Duet
 
 A small, private Android app for two people: a couple, best friends, or anyone long-distance.
