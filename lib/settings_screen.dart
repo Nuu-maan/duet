@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'daily.dart';
+import 'lists_screen.dart';
+import 'notifications.dart';
 import 'pair.dart';
 
 // The photo lives in the Realtime Database as base64 because the free plan
@@ -17,10 +19,14 @@ class SettingsScreen extends StatefulWidget {
     required this.uid,
     required this.email,
     required this.onSignOut,
+    this.friendUid,
+    this.friendName,
   });
 
   final String uid;
   final String email;
+  final String? friendUid;
+  final String? friendName;
   final VoidCallback onSignOut;
 
   @override
@@ -273,6 +279,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 24),
                 Text(
+                  'Notifications',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Card(
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    children: [
+                      _NotificationSwitches(uid: widget.uid),
+                      if (widget.friendUid != null)
+                        ListTile(
+                          leading: const Icon(
+                            Icons.edit_notifications_outlined,
+                          ),
+                          title: Text('Nudges for ${widget.friendName}'),
+                          subtitle: const Text(
+                            'Write your own streak reminders for them',
+                          ),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => NudgesScreen(
+                                friendUid: widget.friendUid!,
+                                friendName: widget.friendName ?? 'your friend',
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
                   'Account',
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: scheme.onSurfaceVariant,
@@ -295,6 +336,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
           },
         ),
       ),
+    );
+  }
+}
+
+class _NotificationSwitches extends StatefulWidget {
+  const _NotificationSwitches({required this.uid});
+
+  final String uid;
+
+  @override
+  State<_NotificationSwitches> createState() => _NotificationSwitchesState();
+}
+
+class _NotificationSwitchesState extends State<_NotificationSwitches> {
+  late final _device = deviceRef(widget.uid);
+  late final _events = _device.onValue;
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<DatabaseEvent>(
+      stream: _events,
+      builder: (context, snapshot) {
+        final value = snapshot.data?.snapshot.value;
+        final device = value is Map ? value : const {};
+        return Column(
+          children: [
+            for (final (key, title, subtitle) in const [
+              ('streak', 'Streak reminders', 'Daily nudge and streak warnings'),
+              ('friend', 'Friend activity', 'Answers, messages, birthdays'),
+              ('games', 'Games', 'When it is your turn'),
+            ])
+              SwitchListTile(
+                title: Text(title),
+                subtitle: Text(subtitle),
+                value: device[key] != false,
+                onChanged: snapshot.hasData
+                    ? (on) => _device.update({key: on}).catchError((_) {})
+                    : null,
+              ),
+          ],
+        );
+      },
     );
   }
 }
