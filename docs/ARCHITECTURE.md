@@ -6,7 +6,7 @@ server code. Each pair of users owns one Firebase project.
 ## Stack
 
 - Flutter (stable), Android only, minSdk 24
-- `firebase_core`, `firebase_auth`, `google_sign_in`, `firebase_database`
+- `firebase_core`, `firebase_auth`, `google_sign_in`, `firebase_database`, `firebase_messaging`
 - `image_picker` for the profile photo
 - State with `StreamBuilder` and `ValueNotifier`; no state-management library
 
@@ -24,6 +24,10 @@ Everything lives under `/pair` in the Realtime Database.
   /rooms/{gameId}: { status, turn, turnNumber, first, state (JSON string), players: { uid: seat } }
   /lists/bucket/{pushId}: { text, done, by }
   /countdowns/{pushId}: { title, date }
+  /devices/{uid}: { token, tz, name, birthday, streak, friend, games }   push target and switches
+  /nudges/{uid}/{pushId}: { text }       reminder lines the other person wrote for uid
+  /notified/{uid}: { nudge, ending, waiting, milestone, last: {...} }    written by the Worker
+  /config/notifyUrl                      the Worker's address
 ```
 
 `database.rules.json` allows reads and writes only for the two UIDs written into it.
@@ -52,6 +56,19 @@ capped at 60 KB and stored as base64 on the member record.
 
 **Pictures are drawn in code.** `lib/art.dart` paints the mascot and uses Material icons for the rest. The app
 ships no image assets, which keeps the APK small and avoids licensing questions.
+
+## Notifications
+
+Notifications are optional and live in `worker/`, a Cloudflare Worker.
+
+- `worker/src/rules.js` is pure: given the pair's data and the current time it returns the pushes to send. All
+  message texts are there. `worker/test/` covers it; run `node --test` in `worker/`.
+- `worker/src/index.js` does the I/O. A cron trigger runs every 15 minutes for timed reminders. `POST /event` is
+  called by the app after an answer, a chat message or an accepted game move; it verifies the caller's Firebase ID
+  token and requires the caller to have a device record, which only the two allowed accounts can write.
+- Nothing is scheduled on the phone, so a notification can never show stale data. `/notified` records what was
+  sent so each timed reminder goes out at most once a day and wording does not repeat.
+- The Worker authenticates to Firebase with a service account key held as a Wrangler secret.
 
 ## Keeping it light
 
