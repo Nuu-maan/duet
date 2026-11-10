@@ -64,7 +64,14 @@ class _DuoPainter extends CustomPainter {
   final Color back;
   final Color ink;
 
-  void _friend(Canvas canvas, Offset c, double r, Color fill, double s) {
+  void _friend(
+    Canvas canvas,
+    Offset c,
+    double r,
+    Color fill,
+    Color blush,
+    double s,
+  ) {
     final outline = Paint()
       ..color = ink
       ..style = PaintingStyle.stroke
@@ -76,6 +83,11 @@ class _DuoPainter extends CustomPainter {
       ..drawCircle(c, r, outline);
 
     for (final side in const [-1, 1]) {
+      canvas.drawCircle(
+        c + Offset(side * r * 0.56, r * 0.2),
+        r * 0.13,
+        Paint()..color = blush,
+      );
       final eye = c + Offset(side * r * 0.36, -r * 0.12);
       if (mood == 'mascot_excited') {
         canvas.drawArc(
@@ -86,12 +98,14 @@ class _DuoPainter extends CustomPainter {
           outline,
         );
       } else {
-        final shocked = mood == 'mascot_shocked';
-        final white = r * (shocked ? 0.26 : 0.22);
+        final wide = mood == 'mascot_shocked' ? 1.25 : 1.0;
         canvas
-          ..drawCircle(eye, white, Paint()..color = front)
-          ..drawCircle(eye, white, outline)
-          ..drawCircle(eye, r * (shocked ? 0.08 : 0.12), dark);
+          ..drawCircle(eye, r * 0.17 * wide, dark)
+          ..drawCircle(
+            eye - Offset(r * 0.05, r * 0.06),
+            r * 0.06 * wide,
+            Paint()..color = front,
+          );
       }
     }
 
@@ -116,8 +130,22 @@ class _DuoPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final s = size.width;
-    _friend(canvas, Offset(s * 0.66, s * 0.47), s * 0.27, back, s);
-    _friend(canvas, Offset(s * 0.36, s * 0.57), s * 0.31, front, s);
+    _friend(
+      canvas,
+      Offset(s * 0.66, s * 0.47),
+      s * 0.27,
+      back,
+      ink.withValues(alpha: 0.18),
+      s,
+    );
+    _friend(
+      canvas,
+      Offset(s * 0.36, s * 0.57),
+      s * 0.31,
+      front,
+      back.withValues(alpha: 0.55),
+      s,
+    );
   }
 
   @override

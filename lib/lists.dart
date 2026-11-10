@@ -1,10 +1,12 @@
 import 'package:firebase_database/firebase_database.dart';
 
+import 'pair.dart';
+
 DatabaseReference bucketRef() =>
-    FirebaseDatabase.instance.ref('pair/lists/bucket');
+    FirebaseDatabase.instance.ref('$dbRoot/lists/bucket');
 
 DatabaseReference countdownsRef() =>
-    FirebaseDatabase.instance.ref('pair/countdowns');
+    FirebaseDatabase.instance.ref('$dbRoot/countdowns');
 
 List<MapEntry<String, Map<Object?, Object?>>> entriesOf(Object? value) {
   if (value is! Map) return const [];
