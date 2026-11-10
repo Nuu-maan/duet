@@ -118,7 +118,12 @@ int? daysToBirthday(String? birthday, DateTime now) {
   return next.difference(today).inDays;
 }
 
-DatabaseReference membersRef() => FirebaseDatabase.instance.ref('pair/members');
+/// Everything lives under this node. Override it with
+/// `--dart-define=DUET_ROOT=demo` to run against a separate copy of the data.
+const dbRoot = String.fromEnvironment('DUET_ROOT', defaultValue: 'pair');
+
+DatabaseReference membersRef() =>
+    FirebaseDatabase.instance.ref('$dbRoot/members');
 
 class Presence {
   Presence(this._user) {

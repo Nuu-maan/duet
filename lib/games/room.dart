@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:firebase_database/firebase_database.dart';
 
+import '../pair.dart';
 import 'game.dart';
 
 typedef Room = Map<String, dynamic>;
@@ -75,7 +76,7 @@ Room? rematch(Object? value, Game game, Random rng, {bool force = false}) {
   };
 }
 
-DatabaseReference roomsRef() => FirebaseDatabase.instance.ref('pair/rooms');
+DatabaseReference roomsRef() => FirebaseDatabase.instance.ref('$dbRoot/rooms');
 
 Future<void> updateRoom(String gameId, Room? Function(Object? value) change) =>
     roomsRef().child(gameId).runTransaction((value) {

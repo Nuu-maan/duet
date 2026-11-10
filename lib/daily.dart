@@ -4,6 +4,8 @@ import 'dart:math';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/services.dart';
 
+import 'pair.dart';
+
 String _two(int n) => n.toString().padLeft(2, '0');
 
 String dayKey(DateTime d) => '${d.year}-${_two(d.month)}-${_two(d.day)}';
@@ -113,11 +115,12 @@ final Future<QuestionBank> questionBank = rootBundle
     );
 
 DatabaseReference dailyRef([String? day]) {
-  final ref = FirebaseDatabase.instance.ref('pair/daily');
+  final ref = FirebaseDatabase.instance.ref('$dbRoot/daily');
   return day == null ? ref : ref.child(day);
 }
 
-DatabaseReference streakRef() => FirebaseDatabase.instance.ref('pair/streak');
+DatabaseReference streakRef() =>
+    FirebaseDatabase.instance.ref('$dbRoot/streak');
 
 // Older builds stored a skip as an empty string; it now counts as unanswered.
 String? _answer(Object? value) =>
