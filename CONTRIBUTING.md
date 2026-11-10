@@ -22,6 +22,7 @@ stays free and light".
    dart format lib test
    flutter analyze
    flutter test
+   (cd worker && node --test)   # only if you touched worker/
    ```
 
 4. Try UI changes on a real phone with `flutter run --release`. Debug builds are several times slower and say

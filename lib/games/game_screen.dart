@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 
 import '../appear.dart';
 import '../art.dart';
+import '../notifications.dart';
 import '../pair.dart';
 import 'game.dart';
 import 'grid.dart';
@@ -66,7 +67,7 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _change(Room? Function(Object?) change) {
-    updateRoom(_game.id, change).catchError((_) {});
+    updateRoom(_game.id, change).catchError((_) => false);
   }
 
   void _play(Object? move) {
@@ -75,7 +76,13 @@ class _GameScreenState extends State<GameScreen> {
     if (room == null || seat == null || room['status'] != 'playing') return;
     if (_game.move(_state.value, seat, move) == null) return;
     HapticFeedback.selectionClick();
-    _change((v) => playMove(v, widget.uid, _game, move));
+    updateRoom(_game.id, (v) => playMove(v, widget.uid, _game, move))
+        .then((accepted) {
+          if (accepted) {
+            notifyFriend('move', {'game': _game.id, 'name': _game.name});
+          }
+        })
+        .catchError((_) {});
   }
 
   Future<void> _restart() async {

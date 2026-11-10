@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/services.dart';
 
+import 'notifications.dart';
 import 'pair.dart';
 
 String _two(int n) => n.toString().padLeft(2, '0');
@@ -161,7 +163,10 @@ Future<void> submitAnswer({
   required String uid,
   required int slot,
   required String value,
-}) => dailyRef(day).update({'answers/$uid/q$slot': value});
+}) async {
+  await dailyRef(day).update({'answers/$uid/q$slot': value});
+  unawaited(notifyFriend('answered', {'day': day, 'slot': slot}));
+}
 
 Future<void> bumpStreak(String today) => streakRef().runTransaction((current) {
   final next = nextStreak(current, today);
@@ -249,8 +254,10 @@ Future<void> sendMessage({
   required int slot,
   required String uid,
   required String text,
-}) =>
-    dailyRef(day)
-        .child('chat/q$slot')
-        .push()
-        .set({'by': uid, 'text': text, 'at': ServerValue.timestamp});
+}) async {
+  await dailyRef(day)
+      .child('chat/q$slot')
+      .push()
+      .set({'by': uid, 'text': text, 'at': ServerValue.timestamp});
+  unawaited(notifyFriend('message', {'day': day, 'slot': slot, 'text': text}));
+}

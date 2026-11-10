@@ -1,0 +1,16 @@
+name = "duet-notify"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+[triggers]
+crons = ["*/15 * * * *"]
+
+[vars]
+# Both values are in your google-services.json:
+#   DB_URL      = project_info.firebase_url
+#   WEB_API_KEY = client[0].api_key[0].current_key
+DB_URL = "https://YOUR-PROJECT-default-rtdb.firebaseio.com"
+WEB_API_KEY = "YOUR_WEB_API_KEY"
+
+# The service account key is a secret, never a var:
+#   npx wrangler secret put SERVICE_ACCOUNT

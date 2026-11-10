@@ -49,6 +49,8 @@ The people and answers shown are made up.
   battleship, memory match, checkers and hangman. Turn-based, so you can play across time zones.
 - **Shared lists.** A bucket list and countdowns to dates that matter.
 - **Profiles.** Name, birthday and a profile photo; see when the other person is online.
+- **Notifications (optional).** Streak reminders, "your friend answered", chat messages and game turns, with
+  wording that changes every time. You can even write your own reminder lines for the other person.
 - **Light.** No bundled images or video. Boards and the mascot are drawn in code, and the app stays smooth on
   low-end phones.
 
@@ -61,8 +63,9 @@ Duet is built for exactly two people who share one Firebase project.
 | Google sign-in | Identifies each of you |
 | Realtime Database | Stores answers, games, lists and presence under `/pair` |
 | Database rules | Allow only your two account IDs; everyone else sees "Not allowed" |
+| Cloudflare Worker (optional) | Sends push notifications |
 
-There is no server to run and nothing to pay for. Each pair hosts their own copy, so no one else, including the
+Apart from the optional notification Worker, there is no server to run, and nothing to pay for. Each pair hosts their own copy, so no one else, including the
 people who wrote Duet, can see your data.
 
 ## Host it yourself
@@ -131,6 +134,49 @@ and send the same file to both.
 
 That's it. Answer today's questions and start a game.
 
+### 6. Notifications (optional)
+
+The app works without this step; you just get no notifications. Turning them on takes one small server, a
+Cloudflare Worker on the free plan (no card), because Firebase's free plan cannot run server code.
+
+Every notification is decided on the server from live data, right before it is sent, so nobody is reminded about a
+streak they already saved.
+
+| Notification | When |
+|---|---|
+| Daily nudge | 7 pm your time, if you have not answered |
+| Streak about to end | 9:30 pm, if a streak is alive and you have not answered |
+| Your friend is waiting | When they answer and you have not |
+| Streak milestone | At 2, 7, 14, 30, 50, 100 and 365 days |
+| Friend answered / sent a message | Straight away |
+| Your turn in a game | Straight away |
+| Birthday and countdown reached | 9 am on the day |
+
+Nothing is sent between 11 pm and 8 am. Each group can be switched off in the app's Settings.
+
+1. Create a free account at [cloudflare.com](https://www.cloudflare.com) and install Node.js.
+2. In the Firebase console, open **Project settings > Service accounts** and click **Generate new private key**.
+   Save the file outside the project. It gives full access to your Firebase project: never commit or share it.
+3. Open `worker/wrangler.toml` and fill in `DB_URL` and `WEB_API_KEY`. Both are in your `google-services.json`.
+4. Deploy and store the key:
+
+   ```sh
+   cd worker
+   npx wrangler login
+   npx wrangler deploy
+   npx wrangler secret put SERVICE_ACCOUNT   # paste the whole key file, on one line
+   ```
+
+5. Open the Worker's address (printed by `deploy`) once in a browser. It saves its address in your database so
+   the app can find it.
+6. Open the app on both phones and allow notifications.
+
+Changing the wording or the times means editing `worker/src/rules.js` and running `npx wrangler deploy` again; the
+app does not need an update.
+
+Some phones delay notifications for apps they consider idle. If they arrive late, set the app's battery usage to
+"Unrestricted" in Android settings.
+
 ### Updating later
 
 Pull the latest code, rebuild and install the new APK over the old one. Your data stays in Firebase.
@@ -155,6 +201,7 @@ If you want to push fixes to both phones without reinstalling, Duet works with
 ```sh
 flutter analyze
 flutter test
+(cd worker && node --test)   # notification rules
 flutter run --release   # performance is only meaningful in release mode
 ```
 
@@ -176,6 +223,8 @@ lib/
   games/                  game interface, room, one file per game
   lists.dart, lists_screen.dart
   settings_screen.dart, onboarding_screen.dart, home_screen.dart, sign_in_screen.dart
+  notifications.dart      registers the phone for pushes, tells the server about events
+worker/                   optional Cloudflare Worker that decides and sends notifications
 assets/questions.json     the question lists
 database.rules.json       rules template
 test/                     unit tests for every game's rules and the daily logic

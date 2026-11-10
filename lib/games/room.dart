@@ -78,8 +78,13 @@ Room? rematch(Object? value, Game game, Random rng, {bool force = false}) {
 
 DatabaseReference roomsRef() => FirebaseDatabase.instance.ref('$dbRoot/rooms');
 
-Future<void> updateRoom(String gameId, Room? Function(Object? value) change) =>
-    roomsRef().child(gameId).runTransaction((value) {
-      final next = change(value);
-      return next == null ? Transaction.abort() : Transaction.success(next);
-    });
+Future<bool> updateRoom(
+  String gameId,
+  Room? Function(Object? value) change,
+) async {
+  final result = await roomsRef().child(gameId).runTransaction((value) {
+    final next = change(value);
+    return next == null ? Transaction.abort() : Transaction.success(next);
+  });
+  return result.committed;
+}

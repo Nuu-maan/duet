@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'art.dart';
 import 'daily.dart';
 import 'lists.dart';
+import 'notifications.dart';
 
 typedef _Entry = MapEntry<String, Map<Object?, Object?>>;
 
@@ -235,6 +236,101 @@ class _CountdownsScreenState extends State<CountdownsScreen> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class NudgesScreen extends StatefulWidget {
+  const NudgesScreen({
+    super.key,
+    required this.friendUid,
+    required this.friendName,
+  });
+
+  final String friendUid;
+  final String friendName;
+
+  @override
+  State<NudgesScreen> createState() => _NudgesScreenState();
+}
+
+class _NudgesScreenState extends State<NudgesScreen> {
+  late final _nudges = nudgesRef(widget.friendUid);
+  late final _events = _nudges.onValue;
+  final _controller = TextEditingController();
+
+  void _add() {
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
+    _controller.clear();
+    _nudges.push().set({'text': text}).catchError(_saveFailed(context));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Nudges for ${widget.friendName}')),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Text(
+                '${widget.friendName} gets one of these when they have not '
+                'answered yet. Type {n} for the streak number.',
+              ),
+            ),
+            Expanded(
+              child: _EntryList(
+                events: _events,
+                emptyText: 'No lines yet.\nWrite the first one below.',
+                itemBuilder: (context, entry) => ListTile(
+                  key: ValueKey(entry.key),
+                  title: Text('${entry.value['text'] ?? ''}'),
+                  trailing: IconButton(
+                    tooltip: 'Delete',
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: () => _nudges
+                        .child(entry.key)
+                        .remove()
+                        .catchError(_saveFailed(context)),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      maxLength: 120,
+                      textCapitalization: TextCapitalization.sentences,
+                      onSubmitted: (_) => _add(),
+                      decoration: const InputDecoration(
+                        labelText: 'A reminder in your words',
+                        counterText: '',
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Add',
+                    icon: const Icon(Icons.add),
+                    onPressed: _add,
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
