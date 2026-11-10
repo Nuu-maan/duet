@@ -186,6 +186,7 @@ class ThreadScreen extends StatefulWidget {
 class _ThreadScreenState extends State<ThreadScreen> {
   late final _events = dailyRef(widget.day).onValue;
   final _answer = TextEditingController();
+  bool _bumped = false;
   final _message = TextEditingController();
 
   String get _friendUid =>
@@ -252,6 +253,12 @@ class _ThreadScreenState extends State<ThreadScreen> {
             }
             final value = snapshot.data!.snapshot.value;
             final answers = answersOf(value);
+            if (!_bumped &&
+                widget.day == dayKey(DateTime.now()) &&
+                bothAnswered(answers)) {
+              _bumped = true;
+              bumpStreak(widget.day).catchError((_) {});
+            }
             final mine = answers[widget.uid]?[widget.slot];
             final theirs = answers[_friendUid]?[widget.slot];
             final chat = chatOf(value, widget.slot);
