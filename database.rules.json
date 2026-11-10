@@ -1,0 +1,8 @@
+{
+  "rules": {
+    "pair": {
+      ".read": "auth != null && (auth.uid === 'UID_ONE' || auth.uid === 'UID_TWO')",
+      ".write": "auth != null && (auth.uid === 'UID_ONE' || auth.uid === 'UID_TWO')"
+    }
+  }
+}
