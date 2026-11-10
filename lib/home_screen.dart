@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -8,9 +11,11 @@ import 'art.dart';
 import 'auth.dart';
 import 'daily.dart';
 import 'daily_screen.dart';
+import 'games/game_screen.dart';
 import 'games/games_screen.dart';
 import 'inbox_screen.dart';
 import 'lists_screen.dart';
+import 'notifications.dart';
 import 'onboarding_screen.dart';
 import 'pair.dart';
 import 'play_card.dart';
@@ -32,6 +37,9 @@ class _HomeScreenState extends State<HomeScreen> {
   late Stream<DatabaseEvent> _members = membersRef().onValue;
   int _tab = 0;
   int _refreshes = 0;
+  StreamSubscription<RemoteMessage>? _opened;
+  Map<String, dynamic>? _pendingOpen;
+  String? _deviceKey;
 
   Future<void> _refresh() async {
     HapticFeedback.selectionClick();
@@ -46,16 +54,76 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _presence = Presence(widget.user);
+    FirebaseMessaging.instance.getInitialMessage().then((message) {
+      if (message != null && mounted) {
+        setState(() => _pendingOpen = message.data);
+      }
+    });
+    _opened = FirebaseMessaging.onMessageOpenedApp.listen(
+      (message) => setState(() => _pendingOpen = message.data),
+    );
+  }
+
+  void _syncDevice(Member me) {
+    final key = '${me.name}|${me.birthday}';
+    if (key == _deviceKey) return;
+    _deviceKey = key;
+    registerDevice(
+      me.uid,
+      name: me.name,
+      birthday: me.birthday,
+    ).catchError((_) {});
+  }
+
+  Future<void> _openTarget(
+    Map<String, dynamic> target,
+    String uid,
+    Map<String, String> names,
+  ) async {
+    switch (target['open']) {
+      case 'daily':
+        _open((_) => DailyScreen(uid: uid, names: names));
+      case 'streak':
+        _open((_) => const StreakScreen());
+      case 'game':
+        final game = games.where((g) => g.id == target['game']).firstOrNull;
+        if (game != null) {
+          _open((_) => GameScreen(game: game, uid: uid, names: names));
+        }
+      case 'thread':
+        final day = '${target['day']}';
+        final slot = int.tryParse('${target['slot']}');
+        if (DateTime.tryParse(day) == null ||
+            slot == null ||
+            slot < 0 ||
+            slot >= questionsPerDay) {
+          return;
+        }
+        final bank = await questionBank;
+        if (!mounted) return;
+        _open(
+          (_) => ThreadScreen(
+            uid: uid,
+            names: names,
+            day: day,
+            slot: slot,
+            question: bank.forDay(day)[slot],
+          ),
+        );
+    }
   }
 
   @override
   void dispose() {
+    _opened?.cancel();
     _presence.stop();
     super.dispose();
   }
 
   Future<void> _signOut() async {
     await _presence.stop();
+    // A signed-out phone must stop receiving the pair's notifications.
+    await deviceRef(widget.user.uid).child('token').remove().catchError((_) {});
     await signOut();
   }
 
@@ -99,10 +167,21 @@ class _HomeScreenState extends State<HomeScreen> {
           return OnboardingScreen(user: widget.user);
         }
         final names = {for (final m in members) m.uid: m.name};
+        final friend = members.where((m) => m.uid != uid).firstOrNull;
+        _syncDevice(members.firstWhere((m) => m.uid == uid));
+        final target = _pendingOpen;
+        if (target != null) {
+          _pendingOpen = null;
+          WidgetsBinding.instance.addPostFrameCallback(
+            (_) => _openTarget(target, uid, names),
+          );
+        }
         void settings() => _open(
           (_) => SettingsScreen(
             uid: uid,
             email: widget.user.email ?? '',
+            friendUid: friend?.uid,
+            friendName: friend?.name,
             onSignOut: _signOut,
           ),
         );
