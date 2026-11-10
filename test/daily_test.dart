@@ -22,18 +22,26 @@ void main() {
   });
 
   group('streak', () {
-    test('starts at one', () {
-      expect(nextStreak(null, '2026-11-10'), {
+    test('day one is recorded but not shown as a streak yet', () {
+      final one = nextStreak(null, '2026-11-10')!;
+      expect(one, {
         'count': 1,
         'lastDay': '2026-11-10',
+        'best': 1,
+        'days': {'2026-11-10': true},
       });
+      expect(displayStreak(one, '2026-11-10'), 0);
+      expect(displayStreak(one, '2026-11-11'), 0);
     });
 
-    test('goes up by one after yesterday', () {
-      expect(nextStreak({'count': 4, 'lastDay': '2026-11-09'}, '2026-11-10'), {
-        'count': 5,
-        'lastDay': '2026-11-10',
-      });
+    test('the streak starts on the second day in a row', () {
+      final two = nextStreak(nextStreak(null, '2026-11-10'), '2026-11-11')!;
+      expect(two['count'], 2);
+      expect(two['best'], 2);
+      expect(streakDays(two), {'2026-11-10', '2026-11-11'});
+      expect(displayStreak(two, '2026-11-11'), 2);
+      expect(displayStreak(two, '2026-11-12'), 2);
+      expect(displayStreak(two, '2026-11-13'), 0);
     });
 
     test('does not count the same day twice', () {
@@ -43,20 +51,48 @@ void main() {
       );
     });
 
-    test('resets after a missed day', () {
-      final old = {'count': 9, 'lastDay': '2026-11-08'};
-      expect(nextStreak(old, '2026-11-10'), {
-        'count': 1,
-        'lastDay': '2026-11-10',
-      });
+    test('resets after a missed day but keeps the best and the calendar', () {
+      final old = {
+        'count': 9,
+        'lastDay': '2026-11-08',
+        'best': 9,
+        'days': {'2026-11-07': true, '2026-11-08': true},
+      };
+      final next = nextStreak(old, '2026-11-10')!;
+      expect(next['count'], 1);
+      expect(next['best'], 9);
+      expect(streakDays(next), {'2026-11-07', '2026-11-08', '2026-11-10'});
       expect(shownStreak(old, '2026-11-10'), 0);
     });
 
-    test('still shown the day after, before today is answered', () {
+    test('still alive the day after, before today is answered', () {
       final s = {'count': 3, 'lastDay': '2026-11-09'};
       expect(shownStreak(s, '2026-11-10'), 3);
       expect(shownStreak(s, '2026-11-09'), 3);
       expect(shownStreak(null, '2026-11-10'), 0);
+    });
+
+    test('currentRun is the live run only, across a month boundary', () {
+      final s = {'count': 3, 'lastDay': '2026-12-01'};
+      expect(currentRun(s, '2026-12-02'), {
+        '2026-12-01',
+        '2026-11-30',
+        '2026-11-29',
+      });
+      expect(currentRun(s, '2026-12-03'), isEmpty);
+      expect(currentRun(null, '2026-12-01'), isEmpty);
+    });
+
+    test('older data without best or days still works', () {
+      final legacy = {'count': 4, 'lastDay': '2026-11-09'};
+      expect(bestStreak(legacy), 0);
+      expect(streakDays(legacy), isEmpty);
+      expect(nextStreak(legacy, '2026-11-10'), {
+        'count': 5,
+        'lastDay': '2026-11-10',
+        'best': 5,
+        'days': {'2026-11-10': true},
+      });
     });
   });
 

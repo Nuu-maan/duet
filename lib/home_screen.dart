@@ -15,6 +15,7 @@ import 'onboarding_screen.dart';
 import 'pair.dart';
 import 'play_card.dart';
 import 'settings_screen.dart';
+import 'streak_screen.dart';
 import 'theme.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -351,33 +352,43 @@ class _StreakChipState extends State<_StreakChip> {
     return StreamBuilder<DatabaseEvent>(
       stream: _events,
       builder: (context, snapshot) {
-        final streak = shownStreak(
+        final streak = displayStreak(
           snapshot.data?.snapshot.value,
           dayKey(DateTime.now()),
         );
         return Semantics(
-          label: '$streak day streak',
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: playful.card(4),
-              borderRadius: BorderRadius.circular(16),
+          button: true,
+          label: '$streak day streak. Open streak calendar',
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const StreakScreen()),
             ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Art('fire', size: 24),
-                  const SizedBox(width: 4),
-                  ExcludeSemantics(
-                    child: Text(
-                      '$streak',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: playful.onCard,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: playful.card(4),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Art('fire', size: 24),
+                    const SizedBox(width: 4),
+                    ExcludeSemantics(
+                      child: Text(
+                        '$streak',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: playful.onCard,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
