@@ -70,20 +70,22 @@ function connect(env) {
           'content-type': 'application/json',
         },
         body: JSON.stringify({
-          message: {
-            token,
-            notification: { title: push.title, body: push.body },
-            data: push.open,
-            android: {
-              priority: 'HIGH',
-              notification: {
-                channel_id: push.channel,
-                icon: 'ic_notification',
-                color: '#16587B',
-                tag: push.tag ?? push.kind,
+          message: push.silent
+            ? { token, data: push.open, android: { priority: 'HIGH' } }
+            : {
+                token,
+                notification: { title: push.title, body: push.body },
+                data: push.open,
+                android: {
+                  priority: 'HIGH',
+                  notification: {
+                    channel_id: push.channel,
+                    icon: 'ic_notification',
+                    color: '#16587B',
+                    tag: push.tag ?? push.kind,
+                  },
+                },
               },
-            },
-          },
         }),
       },
     );
@@ -92,7 +94,7 @@ function connect(env) {
   return { db, send };
 }
 
-async function load(db, nowMs, extraDays = []) {
+async function load(env, db, nowMs, extraDays = []) {
   const [devices, streak, notified, nudges, countdowns] = await Promise.all(
     ['devices', 'streak', 'notified', 'nudges', 'countdowns'].map((path) => db(path)),
   );
@@ -100,7 +102,8 @@ async function load(db, nowMs, extraDays = []) {
   for (const device of Object.values(devices ?? {})) days.add(localTime(nowMs, device?.tz).day);
   const daily = {};
   await Promise.all([...days].map(async (day) => (daily[day] = await db(`daily/${day}`))));
-  return { devices: devices ?? {}, streak, notified, nudges, countdowns, daily };
+  const update = env.UPDATE_ID ? { id: env.UPDATE_ID, note: env.UPDATE_NOTE } : null;
+  return { devices: devices ?? {}, streak, notified, nudges, countdowns, daily, update };
 }
 
 async function deliver({ db, send }, data, pushes) {
@@ -128,7 +131,7 @@ export default {
   async scheduled(controller, env) {
     const firebase = connect(env);
     const now = Date.now();
-    const data = await load(firebase.db, now);
+    const data = await load(env, firebase.db, now);
     await deliver(firebase, data, plan(data, now));
   },
 
@@ -146,7 +149,7 @@ export default {
       const uid = event && (await callerUid(env, event.idToken));
       if (!uid) return new Response('Not signed in', { status: 401 });
       const now = Date.now();
-      const data = await load(firebase.db, now, [event.day]);
+      const data = await load(env, firebase.db, now, [event.day]);
       // Only the two allowed accounts can write a device record.
       if (!data.devices[uid]) return new Response('Not allowed', { status: 403 });
       await deliver(firebase, data, eventPush(data, uid, event, now));
