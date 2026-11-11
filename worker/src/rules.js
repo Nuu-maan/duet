@@ -44,8 +44,16 @@ export const MESSAGES = {
     '{game}: {name} is waiting, and probably gloating.',
     'Your move in {game}. No pressure 😏',
   ],
+  // Never the message itself: it has to be opened in the app.
+  message: [
+    '{name} sent you a message 💬 Open to read it.',
+    'New message from {name}. Tap to see what they said 👀',
+    '{name} wrote back. Come and read it ✉️',
+    'Psst, {name} has something to say. Open up!',
+  ],
   birthday: ["🎂 It's {name}'s birthday today!"],
   countdown: ["🎉 Today's the day: {title}"],
+  update: ['{note}'],
 };
 
 const TITLES = {
@@ -54,8 +62,10 @@ const TITLES = {
   waiting: '{name} is waiting',
   milestone: '{n}-day streak! 🔥',
   answered: '{name} answered',
+  message: 'New message 💬',
   move: '{game}',
   birthday: 'Birthday! 🎂',
+  update: 'New update ✨',
   countdown: "It's today! 🎉",
 };
 
@@ -68,6 +78,7 @@ const CHANNELS = {
   message: 'friend',
   birthday: 'friend',
   countdown: 'friend',
+  update: 'friend',
   move: 'games',
 };
 
@@ -167,6 +178,16 @@ export function plan(data, nowMs, rng = Math.random) {
       }
     }
 
+    // Announced once per person for each id set in wrangler.toml.
+    const update = data.update;
+    if (update?.id && flags.update !== update.id) {
+      out.push(
+        build(data, uid, 'update', { note: update.note || 'Something new just landed.' }, { open: 'home' }, rng, {
+          [`${uid}/update`]: update.id,
+        }),
+      );
+    }
+
     if (device.friend !== false && minutes >= DAY_EVENTS_AT) {
       const born = friend.birthday;
       if (typeof born === 'string' && born.slice(5) === day.slice(5) && flags.birthday !== day) {
@@ -189,13 +210,17 @@ export function plan(data, nowMs, rng = Math.random) {
 
 const text = (value, max) => (typeof value === 'string' ? value.slice(0, max) : '');
 
-/** Instant notifications: something the other person just did. */
+/** Instant notifications: something the other person just did. Sent at any hour. */
 export function eventPush(data, fromUid, event, nowMs, rng = Math.random) {
   const uid = friendOf(data, fromUid);
   const device = data.devices?.[uid];
   if (!device?.token) return [];
-  const { day, minutes } = localTime(nowMs, device.tz);
-  if (isQuiet(minutes)) return [];
+  if (event.kind === 'drawing') {
+    return [{ uid, kind: 'drawing', silent: true, open: { type: 'drawing' }, marks: {} }];
+  }
+  // Quiet hours cover timed reminders only: if the other person is awake and
+  // writing to you, you should hear about it.
+  const { day } = localTime(nowMs, device.tz);
   const name = data.devices[fromUid]?.name || 'Your friend';
   const flags = data.notified?.[uid] ?? {};
 
@@ -213,20 +238,11 @@ export function eventPush(data, fromUid, event, nowMs, rng = Math.random) {
   }
 
   if (event.kind === 'message') {
-    const body = text(event.text, 140);
-    if (device.friend === false || body === '') return [];
+    if (device.friend === false) return [];
+    const day = text(event.day, 10);
     const slot = String(Number(event.slot) || 0);
     return [
-      {
-        uid,
-        kind: 'message',
-        channel: CHANNELS.message,
-        title: name,
-        body,
-        open: { open: 'thread', day: text(event.day, 10), slot },
-        tag: `chat-${text(event.day, 10)}-${slot}`,
-        marks: {},
-      },
+      { ...build(data, uid, 'message', { name }, { open: 'thread', day, slot }, rng), tag: `chat-${day}-${slot}` },
     ];
   }
 

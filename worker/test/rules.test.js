@@ -136,13 +136,15 @@ test('an answer tells the friend it is their turn, once a day, then just that yo
   assert.ok(!answered.body.includes('{'));
 });
 
-test('a chat message shows its text, trimmed, and collapses per thread', () => {
-  const [push] = eventPush(pair(), 'her', { kind: 'message', day: '2026-11-10', slot: 2, text: 'x'.repeat(300) }, at(14), first);
+test('a chat message never shows its text, and collapses per thread', () => {
+  const secret = 'my secret answer';
+  const [push] = eventPush(pair(), 'her', { kind: 'message', day: '2026-11-10', slot: 2, text: secret }, at(14), first);
   assert.equal(push.uid, 'me');
-  assert.equal(push.title, 'Arjun');
-  assert.equal(push.body.length, 140);
+  assert.equal(push.title, 'New message 💬');
+  assert.ok(push.body.includes('Arjun'));
+  assert.ok(!JSON.stringify(push).includes(secret));
   assert.equal(push.tag, 'chat-2026-11-10-2');
-  assert.deepEqual(eventPush(pair(), 'her', { kind: 'message', text: '' }, at(14), first), []);
+  assert.deepEqual(push.open, { open: 'thread', day: '2026-11-10', slot: '2' });
 });
 
 test('a game move names the game and collapses per game', () => {
@@ -152,12 +154,37 @@ test('a game move names the game and collapses per game', () => {
   assert.deepEqual(push.open, { open: 'game', game: 'reversi' });
 });
 
-test('events respect quiet hours, switches and unknown kinds', () => {
+test('events arrive at any hour but respect switches and unknown kinds', () => {
   const move = { kind: 'move', game: 'reversi', name: 'Reversi' };
-  assert.deepEqual(eventPush(pair(), 'me', move, at(23, 30), first), []);
+  assert.equal(eventPush(pair(), 'me', move, at(23, 30), first).length, 1);
+  const late = eventPush(pair(), 'her', { kind: 'message', day: '2026-11-10', slot: 0, text: 'awake?' }, at(1, 30), first);
+  assert.equal(late[0].kind, 'message');
   const data = pair();
   data.devices.her.games = false;
   assert.deepEqual(eventPush(data, 'me', move, at(14), first), []);
   assert.deepEqual(eventPush(pair(), 'me', { kind: 'nope' }, at(14), first), []);
   assert.deepEqual(eventPush({ devices: { me: { token: 't' } } }, 'me', move, at(14), first), []);
+});
+
+test('a drawing sends a silent widget refresh', () => {
+  const [push] = eventPush(pair(), 'me', { kind: 'drawing' }, at(23, 30), first);
+  assert.equal(push.uid, 'her');
+  assert.equal(push.silent, true);
+  assert.deepEqual(push.open, { type: 'drawing' });
+  assert.equal(push.title, undefined);
+});
+
+test('an app update is announced once per person, outside quiet hours', () => {
+  const done = { answers: { me: { q0: 'a' }, her: { q0: 'b' } } };
+  const data = pair({ daily: { '2026-11-10': done }, update: { id: 'p4', note: 'New themes!' } });
+  assert.deepEqual(plan(data, at(2), first), []);
+  const pushes = plan(data, at(10), first);
+  assert.deepEqual(kinds(pushes), ['me:update', 'her:update']);
+  assert.equal(pushes[0].title, 'New update ✨');
+  assert.equal(pushes[0].body, 'New themes!');
+  assert.equal(pushes[0].marks['me/update'], 'p4');
+
+  data.notified = { me: { update: 'p4' }, her: { update: 'p3' } };
+  assert.deepEqual(kinds(plan(data, at(11), first)), ['her:update']);
+  assert.deepEqual(plan(pair({ daily: { '2026-11-10': done } }), at(10), first), []);
 });

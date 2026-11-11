@@ -259,5 +259,5 @@ Future<void> sendMessage({
       .child('chat/q$slot')
       .push()
       .set({'by': uid, 'text': text, 'at': ServerValue.timestamp});
-  unawaited(notifyFriend('message', {'day': day, 'slot': slot, 'text': text}));
+  unawaited(notifyFriend('message', {'day': day, 'slot': slot}));
 }
