@@ -5,12 +5,15 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:home_widget/home_widget.dart';
 
 import 'appear.dart';
 import 'art.dart';
 import 'auth.dart';
 import 'daily.dart';
 import 'daily_screen.dart';
+import 'draw_screen.dart';
+import 'drawing.dart';
 import 'games/game_screen.dart';
 import 'games/games_screen.dart';
 import 'inbox_screen.dart';
@@ -38,6 +41,8 @@ class _HomeScreenState extends State<HomeScreen> {
   int _tab = 0;
   int _refreshes = 0;
   StreamSubscription<RemoteMessage>? _opened;
+  StreamSubscription<RemoteMessage>? _foreground;
+  StreamSubscription<Uri?>? _widgetTaps;
   Map<String, dynamic>? _pendingOpen;
   String? _deviceKey;
 
@@ -62,6 +67,20 @@ class _HomeScreenState extends State<HomeScreen> {
     _opened = FirebaseMessaging.onMessageOpenedApp.listen(
       (message) => setState(() => _pendingOpen = message.data),
     );
+    _foreground = FirebaseMessaging.onMessage.listen((message) {
+      if (message.data['type'] == 'drawing') {
+        syncWidgetFromDatabase().catchError((_) {});
+      }
+    });
+    void fromWidget(Uri? uri) {
+      if (uri?.host == 'draw' && mounted) {
+        setState(() => _pendingOpen = {'open': 'draw'});
+      }
+    }
+
+    HomeWidget.initiallyLaunchedFromHomeWidget().then(fromWidget);
+    _widgetTaps = HomeWidget.widgetClicked.listen(fromWidget);
+    syncWidgetFromDatabase().catchError((_) {});
   }
 
   void _syncDevice(Member me) {
@@ -83,6 +102,8 @@ class _HomeScreenState extends State<HomeScreen> {
     switch (target['open']) {
       case 'daily':
         _open((_) => DailyScreen(uid: uid, names: names));
+      case 'draw':
+        _open((_) => DrawScreen(uid: uid));
       case 'streak':
         _open((_) => const StreakScreen());
       case 'game':
@@ -116,6 +137,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _opened?.cancel();
+    _foreground?.cancel();
+    _widgetTaps?.cancel();
     _presence.stop();
     super.dispose();
   }
