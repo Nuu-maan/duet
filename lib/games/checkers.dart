@@ -149,26 +149,35 @@ class _CheckersBoardState extends State<_CheckersBoard> {
       cols: 8,
       repaint: Listenable.merge([_b.state, _selected]),
       onTap: _tap,
+      tiles: Tiles.none,
       paintCell: (canvas, cell, shown) {
         final i = _cell(shown);
         if ((i ~/ 8 + i % 8).isEven) return;
         final selected = _selected.value;
-        canvas.drawRect(
-          cell,
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            cell.deflate(1),
+            Radius.circular(cell.width * 0.16),
+          ),
           Paint()
-            ..color = i == selected
-                ? scheme.primaryContainer
-                : scheme.surfaceContainerHighest,
+            ..color = i == selected ? scheme.primaryContainer : scheme.surface,
         );
         final piece = (_b.state.value['b'] as List)[i] as int;
         if (piece != 0) {
           drawDisc(canvas, cell, seatColor(scheme, _owner(piece)));
-          if (piece > 2) drawLabel(canvas, cell, '♛', scheme.surface);
+          if (piece > 2) {
+            drawStar(
+              canvas,
+              cell.center - Offset(0, cell.width * 0.015),
+              cell.width * 0.2,
+              scheme.surface,
+            );
+          }
         } else if (_legal().any((m) => m[0] == selected && m[1] == i)) {
           canvas.drawCircle(
             cell.center,
-            cell.width * 0.12,
-            Paint()..color = scheme.outline,
+            cell.width * 0.14,
+            Paint()..color = seatColor(scheme, _b.seat).withValues(alpha: 0.45),
           );
         }
       },

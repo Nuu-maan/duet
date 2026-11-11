@@ -117,7 +117,7 @@ class Hangman extends Game {
   @override
   String get id => 'hangman';
   @override
-  String get name => 'Hangman';
+  String get name => 'Guess the word';
   @override
   IconData get icon => Icons.abc;
   @override
@@ -175,7 +175,7 @@ class Hangman extends Game {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'You ${score[b.seat]}  –  ${score[1 - b.seat]} Friend',
+              'You ${score[b.seat]}  –  ${score[1 - b.seat]} ${b.friend}',
               style: theme.textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
@@ -206,14 +206,32 @@ class Hangman extends Game {
               alignment: WrapAlignment.center,
               children: [
                 for (final c in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''))
-                  SizedBox(
-                    width: 48,
-                    height: 48,
-                    child: TextButton(
-                      onPressed: over || guessed.contains(c)
-                          ? null
-                          : () => b.play(c),
-                      child: Text(c),
+                  Padding(
+                    padding: const EdgeInsets.all(2),
+                    child: SizedBox(
+                      width: 44,
+                      height: 48,
+                      child: FilledButton(
+                        onPressed: over || guessed.contains(c)
+                            ? null
+                            : () => b.play(c),
+                        style: FilledButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: const Size(44, 48),
+                          backgroundColor: scheme.primaryContainer,
+                          foregroundColor: scheme.onPrimaryContainer,
+                          disabledBackgroundColor: !guessed.contains(c)
+                              ? scheme.surfaceContainerHigh
+                              : word.contains(c)
+                              ? scheme.primary.withValues(alpha: 0.35)
+                              : scheme.surfaceContainerLowest,
+                          disabledForegroundColor: scheme.onSurfaceVariant,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(c),
+                      ),
                     ),
                   ),
               ],
