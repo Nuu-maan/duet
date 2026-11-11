@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="drawing_widget_label">Drawing board</string>
+    <string name="drawing_widget_description">Shows what the two of you drew, and updates when either of you draws.</string>
+    <string name="drawing_widget_empty">Open Duet and draw something</string>
+</resources>
