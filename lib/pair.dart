@@ -150,7 +150,8 @@ class Presence {
     try {
       await _me.onDisconnect().update(_offline);
       await _me.update({
-        'photoUrl': _user.photoURL ?? '',
+        'photoUrl':
+            _user.photoURL ?? _user.providerData.firstOrNull?.photoURL ?? '',
         'online': true,
         'lastSeen': ServerValue.timestamp,
       });
