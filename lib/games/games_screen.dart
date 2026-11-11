@@ -1,9 +1,14 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 
 import 'battleship.dart';
 import 'checkers.dart';
 import 'dots_and_boxes.dart';
+import '../draw_screen.dart';
+import '../drawing.dart';
 import 'game.dart';
 import 'game_screen.dart';
 import 'hangman.dart';
@@ -42,18 +47,18 @@ class GamesScreen extends StatefulWidget {
 class _GamesScreenState extends State<GamesScreen> {
   final _events = roomsRef().onValue;
 
-  String _status(Object? value) {
+  String _status(Game game, Object? value) {
     final room = asRoom(value);
     if (room == null) return 'Not started';
     final seat = seatOf(room, widget.uid);
     switch (room['status']) {
       case 'waiting':
-        return seat == null ? 'Your friend is waiting' : 'Waiting for friend';
+        return seat == null ? 'Tap to join' : 'Waiting for friend';
       case 'over':
         return 'Finished';
     }
-    final turn = room['turn'];
-    return turn == seat || turn == bothSeats ? 'Your turn' : "Friend's turn";
+    if (seat == null) return 'In progress';
+    return game.waitsFor(stateOf(room), seat) ? 'Your turn' : "Friend's turn";
   }
 
   @override
@@ -74,6 +79,10 @@ class _GamesScreenState extends State<GamesScreen> {
               ),
             ),
             SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              sliver: SliverToBoxAdapter(child: _DrawTile(uid: widget.uid)),
+            ),
+            SliverPadding(
               padding: const EdgeInsets.all(16),
               sliver: SliverGrid.builder(
                 gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -88,9 +97,9 @@ class _GamesScreenState extends State<GamesScreen> {
                   final status = snapshot.hasError
                       ? 'Status unavailable'
                       : snapshot.hasData
-                      ? _status(rooms[game.id])
+                      ? _status(game, rooms[game.id])
                       : '…';
-                  final mine = status == 'Your turn';
+                  final mine = status == 'Your turn' || status == 'Tap to join';
                   return PlayCard(
                     colorIndex: i,
                     onTap: () => Navigator.of(context).push(
@@ -147,6 +156,103 @@ class _GamesScreenState extends State<GamesScreen> {
           ],
         );
       },
+    );
+  }
+}
+
+/// The shared drawing board, shown as one big tile above the games.
+class _DrawTile extends StatefulWidget {
+  const _DrawTile({required this.uid});
+
+  final String uid;
+
+  @override
+  State<_DrawTile> createState() => _DrawTileState();
+}
+
+class _DrawTileState extends State<_DrawTile> {
+  final _events = drawingRef().child('preview').onValue;
+  String? _encoded;
+  Uint8List? _png;
+
+  Uint8List? _decode(Object? value) {
+    if (value is! String || value.isEmpty) return null;
+    if (value != _encoded) {
+      _encoded = value;
+      try {
+        _png = base64Decode(value);
+      } on FormatException {
+        _png = null;
+      }
+    }
+    return _png;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final onCard = theme.extension<Playful>()!.onCard;
+    return AspectRatio(
+      aspectRatio: 1,
+      child: PlayCard(
+        padding: const EdgeInsets.all(12),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => DrawScreen(uid: widget.uid)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+              child: Row(
+                children: [
+                  const Icon(Icons.brush_rounded),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Drawing board',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: onCard,
+                      ),
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right_rounded),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: ColoredBox(
+                  color: boardColor,
+                  child: StreamBuilder<DatabaseEvent>(
+                    stream: _events,
+                    builder: (context, snapshot) {
+                      final png = _decode(snapshot.data?.snapshot.value);
+                      if (png == null) {
+                        return Center(
+                          child: Text(
+                            'Tap to draw together',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: onCard,
+                            ),
+                          ),
+                        );
+                      }
+                      return Image.memory(
+                        png,
+                        fit: BoxFit.contain,
+                        gaplessPlayback: true,
+                        semanticLabel: 'The current drawing',
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

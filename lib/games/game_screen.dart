@@ -123,7 +123,9 @@ class _GameScreenState extends State<GameScreen> {
     if (winner == drawn) return 'Draw';
     if (winner != null) return winner == seat ? 'You won!' : '$_friend won';
     final turn = turnOf(state);
-    if (turn == bothSeats) return 'Both of you play';
+    if (turn == bothSeats) {
+      return _game.waitsFor(state, seat) ? 'Your pick' : 'Waiting for $_friend';
+    }
     return turn == seat ? 'Your turn' : "$_friend's turn";
   }
 
@@ -239,7 +241,12 @@ class _GameScreenState extends State<GameScreen> {
                           padding: const EdgeInsets.all(16),
                           child: _game.board(
                             context,
-                            Board(state: _state, seat: seat, play: _play),
+                            Board(
+                              state: _state,
+                              seat: seat,
+                              play: _play,
+                              friend: _friend,
+                            ),
                           ),
                         ),
                       ),

@@ -30,6 +30,9 @@ class RockPaperScissors extends Game {
   };
 
   @override
+  bool waitsFor(GameState s, int seat) => (s['picks'] as List)[seat] == -1;
+
+  @override
   GameState? move(GameState s, int seat, Object? m) {
     if (winnerOf(s) != null) return null;
     if (m is! int || m < 0 || m > 2) return null;
@@ -61,7 +64,7 @@ class RockPaperScissors extends Game {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'You ${score[me]}  –  ${score[them]} Friend',
+              'You ${score[me]}  –  ${score[them]} ${b.friend}',
               style: theme.textTheme.headlineSmall,
             ),
             Text('First to $target', style: theme.textTheme.bodyMedium),
@@ -69,7 +72,7 @@ class RockPaperScissors extends Game {
             if (last[me] != -1)
               Text(
                 'Last round: you ${names[last[me] as int].toLowerCase()}, '
-                'friend ${names[last[them] as int].toLowerCase()}',
+                '${b.friend} ${names[last[them] as int].toLowerCase()}',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyLarge,
               ),
@@ -77,7 +80,7 @@ class RockPaperScissors extends Game {
             if (picked != -1)
               Text(
                 'You picked ${names[picked].toLowerCase()}. '
-                'Waiting for your friend.',
+                'Waiting for ${b.friend}.',
                 textAlign: TextAlign.center,
               )
             else if (winnerOf(s) == null)
@@ -89,15 +92,18 @@ class RockPaperScissors extends Game {
                   for (var i = 0; i < 3; i++)
                     FilledButton.tonal(
                       onPressed: () => b.play(i),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(96, 112),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                      ),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              icons[i],
-                              style: theme.textTheme.headlineMedium,
-                            ),
+                            Text(icons[i], style: theme.textTheme.displaySmall),
                             Text(names[i]),
                           ],
                         ),

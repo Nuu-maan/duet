@@ -99,8 +99,8 @@ class Reversi extends Game {
             reversiFlips(cells, i, b.seat + 1).isNotEmpty) {
           canvas.drawCircle(
             cell.center,
-            cell.width * 0.1,
-            Paint()..color = scheme.outline,
+            cell.width * 0.13,
+            Paint()..color = seatColor(scheme, b.seat).withValues(alpha: 0.45),
           );
         }
       },

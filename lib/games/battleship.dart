@@ -75,12 +75,15 @@ class Battleship extends Game {
     final scheme = theme.colorScheme;
 
     void shot(Canvas canvas, Rect cell, int v) {
-      if (v == 2) drawLabel(canvas, cell, '✕', scheme.error);
+      if (v == 2) drawDisc(canvas, cell, scheme.tertiary, size: 0.3);
       if (v == 1) {
         canvas.drawCircle(
           cell.center,
-          cell.width * 0.12,
-          Paint()..color = scheme.outline,
+          cell.width * 0.16,
+          Paint()
+            ..color = scheme.outline
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = cell.width * 0.07,
         );
       }
     }
@@ -91,7 +94,7 @@ class Battleship extends Game {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('Their waters: tap to fire', style: theme.textTheme.labelLarge),
+        Text('Their waters: tap to fire', style: theme.textTheme.titleMedium),
         const SizedBox(height: 8),
         GridBoard(
           rows: size,
@@ -103,10 +106,10 @@ class Battleship extends Game {
               shot(canvas, cell, grid('shots', b.seat)[i] as int),
         ),
         const SizedBox(height: 16),
-        Text('Your fleet', style: theme.textTheme.labelLarge),
+        Text('Your fleet', style: theme.textTheme.titleMedium),
         const SizedBox(height: 8),
         FractionallySizedBox(
-          widthFactor: 0.6,
+          widthFactor: 0.42,
           child: GridBoard(
             rows: size,
             cols: size,
@@ -114,9 +117,12 @@ class Battleship extends Game {
             semanticLabel: 'Your fleet',
             paintCell: (canvas, cell, i) {
               if (grid('ships', b.seat)[i] == 1) {
-                canvas.drawRect(
-                  cell.deflate(2),
-                  Paint()..color = scheme.secondaryContainer,
+                canvas.drawRRect(
+                  RRect.fromRectAndRadius(
+                    cell.deflate(1),
+                    Radius.circular(cell.width * 0.2),
+                  ),
+                  Paint()..color = scheme.primaryContainer,
                 );
               }
               shot(canvas, cell, grid('shots', 1 - b.seat)[i] as int);

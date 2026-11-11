@@ -14,10 +14,16 @@ int? winnerOf(GameState s) => s['winner'] as int?;
 GameState copyState(GameState s) => jsonDecode(jsonEncode(s)) as GameState;
 
 class Board {
-  const Board({required this.state, required this.seat, required this.play});
+  const Board({
+    required this.state,
+    required this.seat,
+    required this.play,
+    this.friend = 'Friend',
+  });
 
   final ValueListenable<GameState> state;
   final int seat;
+  final String friend;
   final void Function(Object? move) play;
 }
 
@@ -30,6 +36,9 @@ abstract class Game {
   String get help;
 
   GameState start(int first, Random rng);
+
+  bool waitsFor(GameState s, int seat) =>
+      turnOf(s) == seat || turnOf(s) == bothSeats;
 
   /// Returns the next state, or null when the move is not legal.
   /// Must not mutate [s]: the caller keeps using it when the move is rejected.

@@ -22,6 +22,15 @@ void main() {
       expect(s['picks'], [-1, -1]);
     });
 
+    test('it waits only on whoever has not picked this round', () {
+      final start = game.start(0, Random(1));
+      expect(game.waitsFor(start, 0), isTrue);
+      expect(game.waitsFor(start, 1), isTrue);
+      final picked = game.move(start, 0, 2)!;
+      expect(game.waitsFor(picked, 0), isFalse);
+      expect(game.waitsFor(picked, 1), isTrue);
+    });
+
     test('ties score nothing and first to three wins', () {
       var s = game.start(0, Random(1));
       s = game.move(game.move(s, 1, 2)!, 0, 2)!;

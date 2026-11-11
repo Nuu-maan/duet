@@ -10,14 +10,17 @@ Widget _discBoard(
   Board b,
   int rows,
   int cols,
-  void Function(int index) onTap,
-) {
+  void Function(int index) onTap, {
+  Tiles tiles = Tiles.square,
+}) {
   final scheme = Theme.of(context).colorScheme;
   return GridBoard(
     rows: rows,
     cols: cols,
     repaint: b.state,
     onTap: onTap,
+    tiles: tiles,
+    panel: tiles == Tiles.round ? scheme.primaryContainer : null,
     paintCell: (canvas, cell, i) {
       final v = (b.state.value['b'] as List)[i] as int;
       if (v != 0) drawDisc(canvas, cell, seatColor(scheme, v - 1));
@@ -73,8 +76,14 @@ class FourInARow extends Game {
   }
 
   @override
-  Widget board(BuildContext context, Board b) =>
-      _discBoard(context, b, rows, cols, (i) => b.play(i % cols));
+  Widget board(BuildContext context, Board b) => _discBoard(
+    context,
+    b,
+    rows,
+    cols,
+    (i) => b.play(i % cols),
+    tiles: Tiles.round,
+  );
 }
 
 class Gomoku extends Game {

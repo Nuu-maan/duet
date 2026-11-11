@@ -51,8 +51,19 @@ class TicTacToe extends Game {
       onTap: b.play,
       paintCell: (canvas, cell, i) {
         final v = (b.state.value['b'] as List)[i] as int;
-        if (v != 0) {
-          drawLabel(canvas, cell, v == 1 ? 'X' : 'O', seatColor(scheme, v - 1));
+        if (v == 0) return;
+        final stroke = Paint()
+          ..color = seatColor(scheme, v - 1)
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeWidth = cell.width * 0.13;
+        final box = cell.deflate(cell.width * 0.27);
+        if (v == 1) {
+          canvas
+            ..drawLine(box.topLeft, box.bottomRight, stroke)
+            ..drawLine(box.topRight, box.bottomLeft, stroke);
+        } else {
+          canvas.drawCircle(cell.center, box.width / 2, stroke);
         }
       },
     );

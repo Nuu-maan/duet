@@ -118,21 +118,31 @@ class _DotsPainter extends CustomPainter {
     final m = size.width * DotsAndBoxes._margin;
     final gap = (size.width - 2 * m) / n;
     Offset dot(int r, int c) => Offset(m + c * gap, m + r * gap);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(20)),
+      Paint()..color = scheme.surfaceContainerHighest,
+    );
 
     for (var i = 0; i < n * n; i++) {
       if (o[i] == 0) continue;
-      canvas.drawRect(
-        Rect.fromPoints(dot(i ~/ n, i % n), dot(i ~/ n + 1, i % n + 1)),
-        Paint()
-          ..color = seatColor(scheme, (o[i] as int) - 1).withValues(alpha: 0.3),
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromPoints(
+            dot(i ~/ n, i % n),
+            dot(i ~/ n + 1, i % n + 1),
+          ).deflate(gap * 0.1),
+          Radius.circular(gap * 0.18),
+        ),
+        Paint()..color = seatColor(scheme, (o[i] as int) - 1),
       );
     }
     final empty = Paint()
       ..color = scheme.outlineVariant
-      ..strokeWidth = 1;
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round;
     final drawn = Paint()
       ..color = scheme.onSurface
-      ..strokeWidth = 4
+      ..strokeWidth = gap * 0.09
       ..strokeCap = StrokeCap.round;
     for (var i = 0; i < DotsAndBoxes.hCount; i++) {
       final hr = i ~/ n, hc = i % n;
@@ -143,7 +153,7 @@ class _DotsPainter extends CustomPainter {
     final dots = Paint()..color = scheme.onSurface;
     for (var r = 0; r <= n; r++) {
       for (var c = 0; c <= n; c++) {
-        canvas.drawCircle(dot(r, c), 5, dots);
+        canvas.drawCircle(dot(r, c), gap * 0.08, dots);
       }
     }
   }

@@ -296,27 +296,29 @@ class _QuestionPage extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(20, 16, 16, 0),
                     child: Row(
                       children: [
-                        Flexible(
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: playful.paper,
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: playful.paper,
+                                borderRadius: BorderRadius.circular(16),
                               ),
-                              child: Text(
-                                _typeLabels[question.type]!,
-                                style: theme.textTheme.labelLarge?.copyWith(
-                                  color: onCard,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                child: Text(
+                                  _typeLabels[question.type]!,
+                                  style: theme.textTheme.labelLarge?.copyWith(
+                                    color: onCard,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
                         ),
-                        const Spacer(),
                         Art(
                           answered ? 'mascot_excited' : 'mascot_hi',
                           size: 64,

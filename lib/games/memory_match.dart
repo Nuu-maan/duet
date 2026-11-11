@@ -8,7 +8,16 @@ import 'grid.dart';
 class MemoryMatch extends Game {
   const MemoryMatch();
 
-  static const faces = ['🍎', '🚀', '🎈', '🐱', '🌙', '⚽', '🎵', '🌵'];
+  static const faces = [
+    Icons.favorite_rounded,
+    Icons.star_rounded,
+    Icons.pets_rounded,
+    Icons.music_note_rounded,
+    Icons.rocket_launch_rounded,
+    Icons.cake_rounded,
+    Icons.wb_sunny_rounded,
+    Icons.local_florist_rounded,
+  ];
 
   @override
   String get id => 'memory';
@@ -65,27 +74,49 @@ class MemoryMatch extends Game {
       cols: 4,
       repaint: b.state,
       onTap: b.play,
+      tiles: Tiles.none,
       paintCell: (canvas, cell, i) {
         final s = b.state.value;
         final owner = (s['found'] as List)[i] as int;
         final shown = owner != 0 || (s['up'] as List).contains(i);
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(cell.deflate(4), const Radius.circular(8)),
-          Paint()
-            ..color = owner != 0
-                ? seatColor(scheme, owner - 1).withValues(alpha: 0.3)
-                : shown
-                ? scheme.surfaceContainerLow
-                : scheme.surfaceContainerHighest,
+        final card = RRect.fromRectAndRadius(
+          cell.deflate(cell.width * 0.06),
+          Radius.circular(cell.width * 0.16),
         );
-        if (shown) {
-          drawLabel(
+        if (!shown) {
+          canvas
+            ..drawRRect(card, Paint()..color = scheme.primaryContainer)
+            ..drawRRect(
+              card.deflate(cell.width * 0.09),
+              Paint()
+                ..color = scheme.onPrimaryContainer.withValues(alpha: 0.35)
+                ..style = PaintingStyle.stroke
+                ..strokeWidth = cell.width * 0.035,
+            );
+          drawStar(
             canvas,
-            cell,
-            faces[(s['cards'] as List)[i] as int],
-            scheme.onSurface,
+            cell.center,
+            cell.width * 0.13,
+            scheme.onPrimaryContainer.withValues(alpha: 0.45),
+          );
+          return;
+        }
+        canvas.drawRRect(card, Paint()..color = scheme.surface);
+        if (owner != 0) {
+          canvas.drawRRect(
+            card,
+            Paint()
+              ..color = seatColor(scheme, owner - 1)
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = cell.width * 0.06,
           );
         }
+        drawIcon(
+          canvas,
+          cell,
+          faces[(s['cards'] as List)[i] as int],
+          owner != 0 ? seatColor(scheme, owner - 1) : scheme.onSurface,
+        );
       },
     );
   }

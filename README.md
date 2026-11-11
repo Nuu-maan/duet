@@ -47,10 +47,13 @@ The people and answers shown are made up.
 - **Streak.** Goes up each day you both answer at least one question.
 - **Ten two-player games.** Tic-tac-toe, four in a row, dots and boxes, reversi, gomoku, rock paper scissors,
   battleship, memory match, checkers and hangman. Turn-based, so you can play across time zones.
+- **Drawing board.** One shared canvas you both doodle on, plus a home-screen widget that shows the latest
+  drawing and updates when the other person draws.
+- **Themes.** Six colour themes to pick from in Settings; the default one follows your phone's light or dark mode.
 - **Shared lists.** A bucket list and countdowns to dates that matter.
 - **Profiles.** Name, birthday and a profile photo; see when the other person is online.
 - **Notifications (optional).** Streak reminders, "your friend answered", chat messages and game turns, with
-  wording that changes every time. You can even write your own reminder lines for the other person.
+  wording that changes every time. Chat notifications never show the message itself, only who sent it. You can even write your own reminder lines for the other person.
 - **Light.** No bundled images or video. Boards and the mascot are drawn in code, and the app stays smooth on
   low-end phones.
 
@@ -214,7 +217,8 @@ is enough for working on UI and game rules, and it is what CI does.
 ```
 lib/
   main.dart               app entry, theme, auth gate
-  theme.dart              colours, shapes, type
+  theme.dart              colours, shapes, type, the six themes
+  drawing.dart            shared drawing board and home-screen widget sync
   art.dart                mascot and icons drawn in code
   pair.dart               members, presence, avatars
   daily.dart              question bank, answers, streak, inbox, chat (pure logic + database calls)
