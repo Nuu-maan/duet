@@ -2,12 +2,15 @@ import 'dart:convert';
 
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:home_widget/home_widget.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'daily.dart';
 import 'lists_screen.dart';
 import 'notifications.dart';
 import 'pair.dart';
+import 'theme.dart';
 
 // The photo lives in the Realtime Database as base64 because the free plan
 // has no file storage, so it must stay small.
@@ -279,6 +282,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 24),
                 Text(
+                  'Theme',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const _ThemePicker(),
+                const SizedBox(height: 24),
+                Text(
                   'Notifications',
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: scheme.onSurfaceVariant,
@@ -378,6 +390,156 @@ class _NotificationSwitchesState extends State<_NotificationSwitches> {
           ],
         );
       },
+    );
+  }
+}
+
+class _ThemePicker extends StatelessWidget {
+  const _ThemePicker();
+
+  void _pick(AppTheme option) {
+    HapticFeedback.selectionClick();
+    themeId.value = option.id;
+    HomeWidget.saveWidgetData<String>(
+      'theme',
+      option.id,
+    ).catchError((_) => null);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<String>(
+      valueListenable: themeId,
+      builder: (context, current, _) => GridView.count(
+        crossAxisCount: 3,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 0.82,
+        children: [
+          for (final option in themes)
+            _ThemeTile(
+              option: option,
+              selected: option.id == current,
+              onTap: () => _pick(option),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A tiny picture of the app in that theme: a colour card with a paper pill
+/// and the highlight dot, on the theme's background.
+class _ThemeTile extends StatelessWidget {
+  const _ThemeTile({
+    required this.option,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final AppTheme option;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final radius = BorderRadius.circular(24);
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: '${option.name} theme',
+      child: AnimatedScale(
+        scale: selected && !MediaQuery.disableAnimationsOf(context) ? 1 : 0.96,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOutCubic,
+        child: Material(
+          color: option.background,
+          shape: RoundedRectangleBorder(
+            borderRadius: radius,
+            side: BorderSide(
+              color: selected ? option.highlight : theme.colorScheme.outline,
+              width: selected ? 3 : 1,
+            ),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            child: ExcludeSemantics(
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: option.cards.first,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 12,
+                                    height: 12,
+                                    decoration: BoxDecoration(
+                                      color: option.highlight,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  if (selected)
+                                    Icon(
+                                      Icons.check_circle_rounded,
+                                      size: 20,
+                                      color: option.onCard,
+                                    ),
+                                ],
+                              ),
+                              Container(
+                                height: 16,
+                                decoration: BoxDecoration(
+                                  color: option.paper,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              Container(
+                                height: 12,
+                                decoration: BoxDecoration(
+                                  color: option.onCard,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        option.name,
+                        maxLines: 1,
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: option.text,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

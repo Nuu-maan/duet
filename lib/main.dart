@@ -1,13 +1,24 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:home_widget/home_widget.dart';
 
 import 'art.dart';
+import 'drawing.dart';
 import 'home_screen.dart';
 import 'sign_in_screen.dart';
 import 'theme.dart';
+
+// Runs in its own isolate when a push arrives while the app is closed.
+@pragma('vm:entry-point')
+Future<void> _onBackgroundMessage(RemoteMessage message) async {
+  if (message.data['type'] != 'drawing') return;
+  await Firebase.initializeApp();
+  await syncWidgetFromDatabase();
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +29,13 @@ Future<void> main() async {
     return;
   }
   FirebaseDatabase.instance.setPersistenceEnabled(true);
+  FirebaseMessaging.onBackgroundMessage(_onBackgroundMessage);
+  // shortcut: the theme choice lives in the widget plugin's local storage,
+  // move it to shared_preferences if more settings need saving
+  try {
+    themeId.value =
+        await HomeWidget.getWidgetData<String>('theme') ?? defaultThemeId;
+  } catch (_) {}
   await GoogleSignIn.instance.initialize();
   runApp(const DuetApp());
 }
@@ -29,8 +47,8 @@ class SetupNeededApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Duet',
-      theme: buildTheme(Brightness.light),
-      darkTheme: buildTheme(Brightness.dark),
+      theme: appTheme(defaultThemeId, Brightness.light),
+      darkTheme: appTheme(defaultThemeId, Brightness.dark),
       home: const Scaffold(
         body: SafeArea(
           child: MascotMessage(
@@ -51,11 +69,15 @@ class DuetApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Duet',
-      theme: buildTheme(Brightness.light),
-      darkTheme: buildTheme(Brightness.dark),
-      home: StreamBuilder<User?>(
+    return ValueListenableBuilder<String>(
+      valueListenable: themeId,
+      builder: (context, id, home) => MaterialApp(
+        title: 'Duet',
+        theme: appTheme(id, Brightness.light),
+        darkTheme: appTheme(id, Brightness.dark),
+        home: home,
+      ),
+      child: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
